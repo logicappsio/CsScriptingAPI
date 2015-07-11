@@ -10,19 +10,34 @@ Click the "Deploy to Azure" button above.  You can create new resources or refer
  * Logic App Sample
 
 ## API Documentation ##
-The API app has two actions - one which returns a string as plain text, the other which returns a JToken as application/json.
+The API app has one action - Execute Script - which returns a single "Result" parameter.
 
-Both actions ask for two input parameters:
+The action has two input parameters:
 
 | Input | Description |
 | ----- | ----- |
 | Script | C# script syntax |
-| JSON Object(s) | Any JSON Objects you want to be able to reference in the script via args |
+| JSON Object(s) | An array of JSON objects to reference in the script via `args` |
+
+The script executes inside of an AppDomain that includes some standard System assemblies as well as Newtonsoft.Json.
+
+###Trigger###
+You can use the C# Script API as a trigger.  It takes a single input of "script" and will trigger the logic app whenever the script returns `true`.  You set the frequency in which the script runs.
 
 ## Example ##
 | Step   | Info |
 |----|----|
-| Action | Return JToken |
-| C# Scripts | return args[1]; |
-| JSON Objects | [{"ID":1, "Name": "foo"}, {"ID":2, "Name": "bar"}] |
-| Output | {"ID": 2, "Name": "bar"} |
+| Action | Execute Script |
+| C# Script | `return args[1];` |
+| JSON Objects | `[{"ID":1, "Name": "foo"}, {"ID":2, "Name": "bar"}]` |
+| Output | `{"Result": {"ID": 2, "Name": "bar"}}` |
+
+You can also perform more complex scripts like the following:
+```
+double cost = args[0]["Cost"]
+for(int x = 1; x < args.length; x++) 
+  {
+  args[x]["foo"] = (int)args[x]["bar"] * cost;
+  }
+return args;
+```
