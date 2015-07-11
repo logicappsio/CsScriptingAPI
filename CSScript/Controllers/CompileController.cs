@@ -1,42 +1,48 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Reflection;
 using System.CodeDom.Compiler;
 using System.Web.Http;
-using Newtonsoft.Json;
-using System.CodeDom;
 using Newtonsoft.Json.Linq;
 using TRex.Metadata;
+using System.Net.Http;
+using Microsoft.Azure.AppService.ApiApps.Service;
 
 namespace CSScript.Controllers
 {
     public class CompileController : ApiController
     {
+        //The imports that will be included when executing the script.  Must be System or Newtonsoft (or you would need to change where the assemblies are referenced to include more)
+        private const string scriptIncludes = @"
+            using System; 
+            using Newtonsoft.Json; 
+            using Newtonsoft.Json.Linq; 
+            using System.Linq; 
+            using System.Collections.Generic;
+            using System.Net;
+            using System.Net.Http;";
+
         JToken args;
+        
         [HttpPost]
-        [Metadata(friendlyName:"Return String")]
-        public Output String([FromBody]
-        Body body)
+        [Metadata(friendlyName: "Execute Script")]
+        public Output Execute([FromBody] Body body)
+        {          
+            if (body.JSON != null)
+                GenerateArgs(body.JSON);
+            
+            return new Output { Result = (JToken)RunScript(body.script, "JToken") };
+        }
+
+        [HttpGet]
+        [Metadata(friendlyName: "Execute Script Trigger", description: "When the script returns true, the Logic App will fire")]
+        public HttpResponseMessage ExecutePollTrigger([FromUri] Body body)
         {
             if (body.JSON != null)
                 GenerateArgs(body.JSON);
 
-            return new Output { ContentType = "text/plain", Content = (string)RunScript(body.script, "string")};
-        }
-
-
-        [HttpPost]
-        [Metadata(friendlyName: "Return JToken")]
-        public Output JToken([FromBody] Body body)
-        {          
-            if (body.JSON != null)
-                GenerateArgs(body.JSON);
-
-            return new Output { ContentType = "application/json", Content = (JToken)RunScript(body.script, "JToken") };
+            return (bool)RunScript(body.script, "bool") == true ? Request.EventTriggered() : Request.EventWaitPoll();            
         }
 
         private void GenerateArgs(IList<JToken> json)
@@ -59,7 +65,7 @@ namespace CSScript.Controllers
         }
         private object RunScript(string input, string type)
         {
-            var sourceCode = "using System; using Newtonsoft.Json; using Newtonsoft.Json.Linq; using System.Linq; using System.Collections.Generic; namespace Script {  public class ScriptClass { public " + type + " RunScript(JToken args) { " + input + " } } }";
+            var sourceCode = scriptIncludes +  "namespace Script {  public class ScriptClass { public " + type + " RunScript(JToken args) { " + input + " } } }";
 
             //  Get a reference to the CSharp code provider
             using (var codeDomProvider = CodeDomProvider.CreateProvider("csharp"))
@@ -77,7 +83,7 @@ namespace CSScript.Controllers
                 //  Now compile the supplied source code and compile it.
                 var compileResult = codeDomProvider.CompileAssemblyFromSource(compileParameters, sourceCode);
 
-                //  If everything goes well (in this example, I know it is correct! :-)) we get a reference to the compiled assembly.
+                //  If everything goes well we get a reference to the compiled assembly.
                 var compiledAssembly = compileResult.CompiledAssembly;
 
                 //  Now, using reflection we can create an instance of our class
@@ -94,16 +100,15 @@ namespace CSScript.Controllers
         {
             [Metadata(friendlyName:"C# Script", Visibility = VisibilityType.Default)]
             public string script { get; set; }
-            [Metadata(friendlyName: "JSON Object(s)", description: "Include a JToken to be passed into script argument.  Can be accessed in scripted as 'args'")]
+            [Metadata(friendlyName: "JSON Object(s)", description: "Array of JSON Objects to be passed into script argument.  Can be referenced in scripted as 'args'")]
             public IList<JToken> JSON {get; set;}
          }
 
 
         public class Output
         {
-            public string ContentType { get; set; }
-            public object Content { get; set; }
-      //      public Body inputBody { get; set; }
+            public object Result { get; set; }
+      
         }
 
     }
