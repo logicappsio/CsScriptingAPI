@@ -38,6 +38,7 @@ namespace CSScript.Controllers
 
         [HttpGet]
         [Metadata(friendlyName: "Execute Script Trigger", description: "When the script returns true, the Logic App will fire")]
+        [Trigger(TriggerType.Poll)]
         public HttpResponseMessage ExecutePollTrigger([FromUri] string script)
         {
             

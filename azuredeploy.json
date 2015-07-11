@@ -332,7 +332,7 @@
                   "id": "[concat(resourceGroup().id, '/providers/Microsoft.AppServices/apiApps/',parameters('apiAppName'))]",
                   "gateway": "[concat('https://', reference(resourceId('Microsoft.Web/sites', parameters('gatewayName'))).hostNames[0])]"
                 },
-                "operation": "Execute",
+                "operation": "ExecuteScript",
                 "parameters": {
                     "body": {
                         "script": "return args;",
