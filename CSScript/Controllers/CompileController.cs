@@ -42,7 +42,13 @@ namespace CSScript.Controllers
             if (body.JSON != null)
                 GenerateArgs(body.JSON);
 
-            return (bool)RunScript(body.script, "bool") == true ? Request.EventTriggered() : Request.EventWaitPoll();            
+            JToken result = (JToken)RunScript(body.script, "JToken");
+            if (result == (JToken)"true")
+                return Request.EventTriggered();
+            else if (result == (JToken)"false")
+                return Request.EventWaitPoll();
+            else
+                return Request.CreateErrorResponse(System.Net.HttpStatusCode.BadRequest, result.ToString()); 
         }
 
         private void GenerateArgs(IList<JToken> json)
@@ -63,7 +69,7 @@ namespace CSScript.Controllers
                 }
             }
         }
-        private object RunScript(string input, string type)
+        private JToken RunScript(string input, string type)
         {
             var sourceCode = scriptIncludes +  "namespace Script {  public class ScriptClass { public " + type + " RunScript(JToken args) { " + input + " } } }";
 
@@ -83,6 +89,16 @@ namespace CSScript.Controllers
                 //  Now compile the supplied source code and compile it.
                 var compileResult = codeDomProvider.CompileAssemblyFromSource(compileParameters, sourceCode);
 
+                //  Check for compile errors
+                if (compileResult.Errors.Count > 0)
+                {
+                    var errorArray = new JArray();
+                    foreach (var error in compileResult.Errors)
+                    {
+                       errorArray.Add(error.ToString());
+                    }
+                    return errorArray;
+                }
                 //  If everything goes well we get a reference to the compiled assembly.
                 var compiledAssembly = compileResult.CompiledAssembly;
 
@@ -92,7 +108,7 @@ namespace CSScript.Controllers
                 //  ... and call a method on it!
                 var callResult = inst.GetType().InvokeMember("RunScript", BindingFlags.InvokeMethod, null, inst, argsv);
                 
-                return callResult;
+                return (JToken)callResult;
             }
         }
 
