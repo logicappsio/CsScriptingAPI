@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using TRex.Metadata;
 using System.Net.Http;
 using Microsoft.Azure.AppService.ApiApps.Service;
+using System.Diagnostics;
 
 namespace CSScript.Controllers
 {
@@ -37,15 +38,14 @@ namespace CSScript.Controllers
 
         [HttpGet]
         [Metadata(friendlyName: "Execute Script Trigger", description: "When the script returns true, the Logic App will fire")]
-        public HttpResponseMessage ExecutePollTrigger([FromUri] Body body)
+        public HttpResponseMessage ExecutePollTrigger([FromUri] string script)
         {
-            if (body.JSON != null)
-                GenerateArgs(body.JSON);
-
-            JToken result = (JToken)RunScript(body.script, "JToken");
-            if (result == (JToken)"true")
+            
+            JToken result = RunScript(script, "JToken");
+            Debug.WriteLine(result.ToString());
+            if (result.ToString() == "True") 
                 return Request.EventTriggered();
-            else if (result == (JToken)"false")
+            else if (result.ToString() == "False")
                 return Request.EventWaitPoll();
             else
                 return Request.CreateErrorResponse(System.Net.HttpStatusCode.BadRequest, result.ToString()); 
@@ -123,7 +123,7 @@ namespace CSScript.Controllers
 
         public class Output
         {
-            public object Result { get; set; }
+            public JToken Result { get; set; }
       
         }
 

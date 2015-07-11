@@ -226,6 +226,7 @@ namespace CSScript
             public void Apply(SwaggerDocument swaggerDoc, SchemaRegistry schemaRegistry, IApiExplorer apiExplorer)
             {
                 swaggerDoc.definitions["Object"].vendorExtensions["additionalProperties"] = true;
+      
             }
         }
     }
