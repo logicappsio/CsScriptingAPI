@@ -34,7 +34,7 @@ You can use the C# Script API as a trigger.  It takes a single input of "script"
 
 You can also perform more complex scripts like the following:
 ```
-double cost = args[0]["Cost"]
+double cost = args[0]["Cost"];
 for(int x = 1; x < args.length; x++) 
   {
   args[x]["foo"] = (int)args[x]["bar"] * cost;
