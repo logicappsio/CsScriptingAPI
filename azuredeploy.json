@@ -7,7 +7,7 @@
     },
     "apiAppName": {
       "type": "string",
-      "defaultValue": "CScriptingAPI"
+      "defaultValue": "CS.Scripting"
     },
     "gatewayName": {
       "type": "string"
@@ -20,7 +20,7 @@
     },
     "logicAppName": {
       "type": "string",
-      "defaultValue": "CScriptingSample"
+      "defaultValue": "CS.Scripting.Sample"
     },
     "svcPlanName": {
       "type": "string"
