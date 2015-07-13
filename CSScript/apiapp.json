@@ -1,10 +1,10 @@
 ﻿{
     "$schema": "http://json-schema.org/schemas/2014-11-01/apiapp.json#",
-    "id": "CSScriptAPI",
+    "id": "CSharpAPI",
     "namespace": "logicappsio.com",
     "gateway": "2015-01-14",
     "version": "1.0.0",
-    "title": "CS Script API",
+    "title": "CSharp API",
     "summary": "Compiles C# Scripts",
     "author": "Jeff Hollan",
     "endpoints": {

@@ -9,6 +9,9 @@ using TRex.Metadata;
 using System.Net.Http;
 using Microsoft.Azure.AppService.ApiApps.Service;
 using System.Diagnostics;
+using System.Collections.ObjectModel;
+using System.Web;
+using System.IO;
 
 namespace CSScript.Controllers
 {
@@ -33,17 +36,21 @@ namespace CSScript.Controllers
         {          
             if (body.context != null)
                 GenerateArgs(body.context);
+
+            if (body.attachments != null)
+                readAttachments(body.attachments);
             
-            return new Output { Result = (JToken)RunScript(body.script, "JToken") };
+            return new Output { Result = (JToken)RunScript(body.script, "JToken", body.attachments) };
         }
 
+       
         [HttpGet]
         [Metadata(friendlyName: "Execute Script Trigger", description: "When the script returns true, the Logic App will fire")]
         [Trigger(TriggerType.Poll)]
         public HttpResponseMessage ExecutePollTrigger([FromUri] string script)
         {
             
-            JToken result = RunScript(script, "JToken");
+            JToken result = RunScript(script, "JToken", null);
             Debug.WriteLine(result.ToString());
             if (result.ToString() == "False")
                 return Request.EventWaitPoll();
@@ -63,7 +70,7 @@ namespace CSScript.Controllers
                 args = new JArray(json);
 
         }
-        private JToken RunScript(string input, string type)
+        private JToken RunScript(string input, string type, Collection<Attachment> attachments)
         {
             compiled = false;
             var sourceCode = scriptIncludes +  "namespace Script {  public class ScriptClass { public " + type + " RunScript(JToken args) { " + input + " } } }";
@@ -78,11 +85,28 @@ namespace CSScript.Controllers
                 //Include library references, only when library contains System or Newtonsoft
                 foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    if (!asm.IsDynamic && (asm.FullName.Contains("Newtonsoft") || asm.FullName.Contains("System")))
+                    if (!asm.IsDynamic && ( asm.FullName.Contains("System") || asm.FullName.Contains("Newtonsoft")))
                         compileParameters.ReferencedAssemblies.Add(asm.Location);
                 }
+                if (attachments != null)
+                {
+                    foreach (var attachment in attachments)
+                    {
+                        compileParameters.ReferencedAssemblies.Add(HttpRuntime.AppDomainAppPath + @"\" + attachment.filename);
+                        sourceCode = attachment.appendusing + sourceCode;
+                    }
+                }
+
                 //  Now compile the supplied source code and compile it.
                 var compileResult = codeDomProvider.CompileAssemblyFromSource(compileParameters, sourceCode);
+
+                if (attachments != null)
+                {
+                    foreach (var attachment in attachments)
+                    {
+                        File.Delete(HttpRuntime.AppDomainAppPath + @"\" + attachment.filename);
+                    }
+                }
 
                 //  Check for compile errors
                 if (compileResult.Errors.Count > 0)
@@ -103,9 +127,18 @@ namespace CSScript.Controllers
                 //  ... and call a method on it!
                 var callResult = inst.GetType().InvokeMember("RunScript", BindingFlags.InvokeMethod, null, inst, argsv);
                 compiled = true;
+
+                
                 return (JToken)callResult;
             }
         }
+
+        private void readAttachments(Collection<Attachment> attachments)
+        {
+            var file = System.Convert.FromBase64String(attachments.First().attachment);
+            File.WriteAllBytes(HttpRuntime.AppDomainAppPath + @"\" + attachments.First().filename, file);
+        }
+
 
         public class Body
         {
@@ -114,13 +147,24 @@ namespace CSScript.Controllers
 
             [Metadata(friendlyName: "Context Object(s)", description: "JSON Object(s) to be passed into script argument.  Must be an array [ ... ].  Can be referenced in scripted as 'args'")]
             public IList<JToken> context {get; set;}
-         }
+
+            public Collection<Attachment> attachments { get; set; }
+
+            
+        }
 
 
         public class Output
         {
             public JToken Result { get; set; }
       
+        }
+
+        public class Attachment
+        {
+            public string filename;
+            public string attachment;
+            public string appendusing;
         }
 
     }
