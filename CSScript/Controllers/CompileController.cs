@@ -53,9 +53,15 @@ namespace CSScript.Controllers
                 return Request.CreateErrorResponse(System.Net.HttpStatusCode.BadRequest, result.ToString()); 
         }
 
-        private void GenerateArgs(JToken json)
+        private void GenerateArgs(IList<JToken> json)
         {
-            args = json;
+
+            if (json.Count == 1)
+                args = json[0];
+            //     args = json;
+            if(json.Count > 1)
+                args = new JArray(json);
+
         }
         private JToken RunScript(string input, string type)
         {
@@ -105,8 +111,9 @@ namespace CSScript.Controllers
         {
             [Metadata(friendlyName:"C# Script", Visibility = VisibilityType.Default)]
             public string script { get; set; }
-            [Metadata(friendlyName: "Context Object(s)", description: "JSON Object(s) to be passed into script argument.  Base must be single object - can be referenced in scripted as 'args'")]
-            public JToken context {get; set;}
+
+            [Metadata(friendlyName: "Context Object(s)", description: "JSON Object(s) to be passed into script argument.  Must be an array [ ... ].  Can be referenced in scripted as 'args'")]
+            public IList<JToken> context {get; set;}
          }
 
 
