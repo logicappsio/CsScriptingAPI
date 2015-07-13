@@ -14,6 +14,7 @@ namespace CSScript.Controllers
 {
     public class CompileController : ApiController
     {
+        private bool compiled;
         //The imports that will be included when executing the script.  Must be System or Newtonsoft (or you would need to change where the assemblies are referenced to include more)
         private const string scriptIncludes = @"
             using System; 
@@ -30,8 +31,8 @@ namespace CSScript.Controllers
         [Metadata(friendlyName: "Execute Script")]
         public Output Execute([FromBody] Body body)
         {          
-            if (body.JSON != null)
-                GenerateArgs(body.JSON);
+            if (body.context != null)
+                GenerateArgs(body.context);
             
             return new Output { Result = (JToken)RunScript(body.script, "JToken") };
         }
@@ -44,34 +45,21 @@ namespace CSScript.Controllers
             
             JToken result = RunScript(script, "JToken");
             Debug.WriteLine(result.ToString());
-            if (result.ToString() == "True") 
-                return Request.EventTriggered();
-            else if (result.ToString() == "False")
+            if (result.ToString() == "False")
                 return Request.EventWaitPoll();
+            else if (compiled)
+                return Request.EventTriggered(new Output { Result = result});
             else
                 return Request.CreateErrorResponse(System.Net.HttpStatusCode.BadRequest, result.ToString()); 
         }
 
-        private void GenerateArgs(IList<JToken> json)
+        private void GenerateArgs(JToken json)
         {
-            //If the json object is empty, return
-            if (json.Count == 0)
-                return;
-            //If there is only one JSON object, make args a JObject
-            if (json.Count == 1)
-                args = json.FirstOrDefault();
-            //If there are multiple JSON objects, make args a JArray
-            else
-            {
-                args = new JArray();
-                foreach (var obj in json)
-                {
-                    ((JArray)args).Add(obj);
-                }
-            }
+            args = json;
         }
         private JToken RunScript(string input, string type)
         {
+            compiled = false;
             var sourceCode = scriptIncludes +  "namespace Script {  public class ScriptClass { public " + type + " RunScript(JToken args) { " + input + " } } }";
 
             //  Get a reference to the CSharp code provider
@@ -108,7 +96,7 @@ namespace CSScript.Controllers
                 object[] argsv = { args };
                 //  ... and call a method on it!
                 var callResult = inst.GetType().InvokeMember("RunScript", BindingFlags.InvokeMethod, null, inst, argsv);
-                
+                compiled = true;
                 return (JToken)callResult;
             }
         }
@@ -117,8 +105,8 @@ namespace CSScript.Controllers
         {
             [Metadata(friendlyName:"C# Script", Visibility = VisibilityType.Default)]
             public string script { get; set; }
-            [Metadata(friendlyName: "JSON Object(s)", description: "Array of JSON Objects to be passed into script argument.  Can be referenced in scripted as 'args'")]
-            public IList<JToken> JSON {get; set;}
+            [Metadata(friendlyName: "Context Object(s)", description: "JSON Object(s) to be passed into script argument.  Base must be single object { .. } - can be referenced in scripted as 'args'")]
+            public JToken context {get; set;}
          }
 
 
