@@ -336,7 +336,7 @@
                 "parameters": {
                     "body": {
                         "script": "return args;",
-                        "JSON": [
+                        "context": [
                             {
                                 "Message": "Hello World"
                             }
