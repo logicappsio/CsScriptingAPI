@@ -163,7 +163,7 @@ namespace CSScript.Controllers
         public class Attachment
         {
             public string filename;
-            public string attachment;
+            public string content;
             public string appendusing;
         }
 
