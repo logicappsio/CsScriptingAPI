@@ -9,6 +9,7 @@ using TRex.Metadata;
 using System.Net.Http;
 using Microsoft.Azure.AppService.ApiApps.Service;
 using System.Diagnostics;
+using System.Collections.ObjectModel;
 
 namespace CSScript.Controllers
 {
@@ -33,10 +34,14 @@ namespace CSScript.Controllers
         {          
             if (body.context != null)
                 GenerateArgs(body.context);
+
+            if (body.attachments != null)
+                readAttachments(body.attachments);
             
             return new Output { Result = (JToken)RunScript(body.script, "JToken") };
         }
 
+       
         [HttpGet]
         [Metadata(friendlyName: "Execute Script Trigger", description: "When the script returns true, the Logic App will fire")]
         [Trigger(TriggerType.Poll)]
@@ -81,6 +86,8 @@ namespace CSScript.Controllers
                     if (!asm.IsDynamic && (asm.FullName.Contains("Newtonsoft") || asm.FullName.Contains("System")))
                         compileParameters.ReferencedAssemblies.Add(asm.Location);
                 }
+                
+                
                 //  Now compile the supplied source code and compile it.
                 var compileResult = codeDomProvider.CompileAssemblyFromSource(compileParameters, sourceCode);
 
@@ -107,6 +114,13 @@ namespace CSScript.Controllers
             }
         }
 
+        private void readAttachments(Collection<Attachment> attachments)
+        {
+            var file = System.Convert.FromBase64String(attachments.First().attachment);
+            System.IO.File.WriteAllBytes(@"C:\temp\" + attachments.First().filename, file);
+        }
+
+
         public class Body
         {
             [Metadata(friendlyName:"C# Script", Visibility = VisibilityType.Default)]
@@ -114,13 +128,23 @@ namespace CSScript.Controllers
 
             [Metadata(friendlyName: "Context Object(s)", description: "JSON Object(s) to be passed into script argument.  Must be an array [ ... ].  Can be referenced in scripted as 'args'")]
             public IList<JToken> context {get; set;}
-         }
+
+            public Collection<Attachment> attachment { get; set; }
+
+            
+        }
 
 
         public class Output
         {
             public JToken Result { get; set; }
       
+        }
+
+        public class Attachment
+        {
+            public string filename;
+            public string attachment;
         }
 
     }
