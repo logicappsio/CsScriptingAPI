@@ -105,7 +105,7 @@ namespace CSScript.Controllers
         {
             [Metadata(friendlyName:"C# Script", Visibility = VisibilityType.Default)]
             public string script { get; set; }
-            [Metadata(friendlyName: "Context Object(s)", description: "JSON Object(s) to be passed into script argument.  Base must be single object { .. } - can be referenced in scripted as 'args'")]
+            [Metadata(friendlyName: "Context Object(s)", description: "JSON Object(s) to be passed into script argument.  Base must be single object - can be referenced in scripted as 'args'")]
             public JToken context {get; set;}
          }
 
