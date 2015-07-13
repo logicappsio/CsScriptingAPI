@@ -6,7 +6,7 @@ Click the "Deploy to Azure" button above.  You can create new resources or refer
  * Resource Group (optional)
  * Service Plan (if you don't reference exisiting one)
  * Gateway (if you don't reference existing one)
- * API App (CSharp.API)
+ * API App (CSharpAPI)
  * API App Host (this is the site behind the api app that this github code deploys to)
  * Logic App Sample
 
@@ -34,7 +34,7 @@ You can use the C# Script API as a trigger.  It takes a single input of "script"
 | Output | `{"Result": {"ID": 2, "Name": "bar"}}` |
 
 You can also perform more complex scripts like the following:
-```
+```csharp
 double cost = args["Cost"];
 for(int x = 1; x < args.length; x++) 
   {
