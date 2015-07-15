@@ -135,7 +135,7 @@ namespace CSScript.Controllers
 
         private void readAttachments(Collection<Attachment> attachments)
         {
-            var file = System.Convert.FromBase64String(attachments.First().attachment);
+            var file = System.Convert.FromBase64String(attachments.First().content);
             File.WriteAllBytes(HttpRuntime.AppDomainAppPath + @"\" + attachments.First().filename, file);
         }
 
