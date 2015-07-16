@@ -208,8 +208,8 @@
             "[resourceId('Microsoft.Web/Sites', parameters('siteName'))]"
           ],
           "properties": {
-            "RepoUrl": "[parameters('repoURL')]",
-            "branch": "[parameters('branch')]",
+            "RepoUrl": "http://github.com/logicappsio/CsScriptingAPI",
+            "branch": "master",
             "IsManualIntegration": true
           }
         }
