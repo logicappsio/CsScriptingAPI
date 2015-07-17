@@ -45,7 +45,7 @@
       ]
     },
     "gatewayToApiAppSecret": {
-      "defaultValue": "0000000000000000000000000000000000000000000000000000000000000000",
+      "defaultValue": "Y3NzY3JpcHRpbmdhcGk=",
       "type": "securestring"
     }
   },

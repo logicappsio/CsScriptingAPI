@@ -141,7 +141,11 @@ namespace CSScript.Controllers
                 //  Now, using reflection we can create an instance of our class
                 var inst = compiledAssembly.CreateInstance("Script.ScriptClass");
                 //  ... and call a method on it!
-                var callResult = inst.GetType().InvokeMember("RunScript", BindingFlags.InvokeMethod, null, inst, args.ToArray());
+                object callResult;
+                if(args != null)
+                    callResult = inst.GetType().InvokeMember("RunScript", BindingFlags.InvokeMethod, null, inst, args.ToArray());
+                else
+                    callResult = inst.GetType().InvokeMember("RunScript", BindingFlags.InvokeMethod, null, inst, null);
                 compiled = true;
 
                 
