@@ -259,7 +259,7 @@
       ],
       "properties": {
         "package": {
-          "id": "LogicAppsIO.CSharp"
+          "id": "Microsoft.ApiApp"
         },
         "host": {
 
