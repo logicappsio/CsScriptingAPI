@@ -136,7 +136,18 @@
             "targetId": "[resourceId('Microsoft.Web/sites',parameters('gatewayName'))]"
           }
         },
-        
+        {
+          "type": "tokens",
+          "apiVersion": "2015-03-01-preview",
+          "location": "[resourceGroup().location]",
+          "name": "[parameters('logicAppName')]",
+          "tags": {
+            "displayName": "AuthenticationToken"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.AppService/gateways', parameters('gatewayName'))]"
+          ]
+        }
       ],
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', parameters('gatewayName'))]"
@@ -197,8 +208,8 @@
             "[resourceId('Microsoft.Web/Sites', parameters('siteName'))]"
           ],
           "properties": {
-            "RepoUrl": "[parameters('repoURL')]",
-            "branch": "[parameters('branch')]",
+            "RepoUrl": "http://github.com/logicappsio/CsScriptingAPI",
+            "branch": "logicappsdeploy",
             "IsManualIntegration": true
           }
         }
@@ -270,7 +281,86 @@
         },
         "dependencies": [ ]
       }
+    },
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2015-02-01-preview",
+      "name": "[parameters('logicAppName')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "displayName": "LogicApp"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.AppService/apiApps', parameters('apiAppName'))]"
+      ],
+      "properties": {
+        "sku": {
+          "name": "[parameters('sku')]",
+          "plan": {
+            "id": "[concat(resourceGroup().id, '/providers/Microsoft.Web/serverfarms/',parameters('svcPlanName'))]"
+          }
+        },
+        "definition": {
+          "$schema": "http://schema.management.azure.com/providers/Microsoft.Logic/schemas/2014-12-01-preview/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "token": {
+              "defaultValue": "[reference(resourceId('Microsoft.AppService/gateways/tokens', parameters('gatewayName'), parameters('logicAppName'))).token]",
+              "type": "String",
+              "metadata": {
+                "token": {
+                  "name": "token"
+                }
+              }
+            }
+          },
+          "triggers": {
+            "recurrence": {
+              "type": "recurrence",
+              "recurrence": {
+                "frequency": "Hour",
+                "interval": 1
+              }
+            }
+          },
+          "actions": {
+            "cscriptingapi": {
+              "type": "ApiApp",
+              "inputs": {
+                "apiVersion": "2015-01-14",
+                "host": {
+                  "id": "[concat(resourceGroup().id, '/providers/Microsoft.AppServices/apiApps/',parameters('apiAppName'))]",
+                  "gateway": "[concat('https://', reference(resourceId('Microsoft.Web/sites', parameters('gatewayName'))).hostNames[0])]"
+                },
+                "operation": "ExecuteScript",
+                "parameters": {
+                    "body": {
+                        "script": "return args;",
+                        "context": [
+                            {
+                                "Message": "Hello World"
+                            }
+                        ]
+                    }
+                },
+                "authentication": {
+                  "type": "Raw",
+                  "scheme": "Zumo",
+                  "parameter": "@parameters('token')"
+                }
+              }
+            }
+          },
+          "outputs": {
+            "result": {
+              "type": "array",
+              "value": "@body('readValues')"
+            }
+          }
+        },
+        "parameters": { }
+      }
     }
-   
   ]
 }
+
