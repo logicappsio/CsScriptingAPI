@@ -28,8 +28,10 @@ namespace CSScript.Controllers
             using System.Net;
             using System.Net.Http;";
 
-        JToken args;
+        List<JToken> args;
         
+        private string contextTokens = "";
+
         [HttpPost]
         [Metadata(friendlyName: "Execute Script")]
         public Output Execute([FromBody] Body body)
@@ -37,10 +39,21 @@ namespace CSScript.Controllers
             if (body.context != null)
                 GenerateArgs(body.context);
 
-            if (body.attachments != null)
-                readAttachments(body.attachments);
-            
-            return new Output { Result = (JToken)RunScript(body.script, "JToken", body.attachments) };
+            if (body.libraries != null)
+                readAttachments(body.libraries);
+            var result = (JToken)RunScript(body.script, "JToken", body.libraries);
+            if (compiled)
+                return new Output { Result = result };
+            else
+            {
+                var resp = new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent(result.ToString()),
+                    ReasonPhrase = "Compiler Error"
+                };
+                throw new HttpResponseException(resp);
+            }
+           
         }
 
        
@@ -60,20 +73,24 @@ namespace CSScript.Controllers
                 return Request.CreateErrorResponse(System.Net.HttpStatusCode.BadRequest, result.ToString()); 
         }
 
-        private void GenerateArgs(IList<JToken> json)
+        /// <summary>
+        /// Generates variables within the script matching to the Key/Values of the context object
+        /// </summary>
+        /// <param name="json"></param>
+        private void GenerateArgs(JObject json)
         {
-
-            if (json.Count == 1)
-                args = json[0];
-            //     args = json;
-            if(json.Count > 1)
-                args = new JArray(json);
-
+            args = new List<JToken>();
+            foreach(var param in json)
+            {
+                contextTokens += "JToken " + param.Key +", ";
+                args.Add(param.Value);
+            }
+            contextTokens = contextTokens.Remove(contextTokens.Length - 2, 2);
         }
-        private JToken RunScript(string input, string type, Collection<Attachment> attachments)
+        private JToken RunScript(string input, string type, Collection<Library> libraries)
         {
             compiled = false;
-            var sourceCode = scriptIncludes +  "namespace Script {  public class ScriptClass { public " + type + " RunScript(JToken args) { " + input + " } } }";
+            var sourceCode = scriptIncludes +  "namespace Script {  public class ScriptClass { public " + type + " RunScript(" + contextTokens + ") { " + input + " } } }";
 
             //  Get a reference to the CSharp code provider
             using (var codeDomProvider = CodeDomProvider.CreateProvider("csharp"))
@@ -88,21 +105,21 @@ namespace CSScript.Controllers
                     if (!asm.IsDynamic && ( asm.FullName.Contains("System") || asm.FullName.Contains("Newtonsoft")))
                         compileParameters.ReferencedAssemblies.Add(asm.Location);
                 }
-                if (attachments != null)
+                if (libraries != null)
                 {
-                    foreach (var attachment in attachments)
+                    foreach (var attachment in libraries)
                     {
                         compileParameters.ReferencedAssemblies.Add(HttpRuntime.AppDomainAppPath + @"\" + attachment.filename);
-                        sourceCode = attachment.appendusing + sourceCode;
+                        sourceCode = attachment.usingstatement + sourceCode;
                     }
                 }
 
                 //  Now compile the supplied source code and compile it.
                 var compileResult = codeDomProvider.CompileAssemblyFromSource(compileParameters, sourceCode);
 
-                if (attachments != null)
+                if (libraries != null)
                 {
-                    foreach (var attachment in attachments)
+                    foreach (var attachment in libraries)
                     {
                         File.Delete(HttpRuntime.AppDomainAppPath + @"\" + attachment.filename);
                     }
@@ -123,9 +140,8 @@ namespace CSScript.Controllers
 
                 //  Now, using reflection we can create an instance of our class
                 var inst = compiledAssembly.CreateInstance("Script.ScriptClass");
-                object[] argsv = { args };
                 //  ... and call a method on it!
-                var callResult = inst.GetType().InvokeMember("RunScript", BindingFlags.InvokeMethod, null, inst, argsv);
+                var callResult = inst.GetType().InvokeMember("RunScript", BindingFlags.InvokeMethod, null, inst, args.ToArray());
                 compiled = true;
 
                 
@@ -133,10 +149,10 @@ namespace CSScript.Controllers
             }
         }
 
-        private void readAttachments(Collection<Attachment> attachments)
+        private void readAttachments(Collection<Library> libraries)
         {
-            var file = System.Convert.FromBase64String(attachments.First().content);
-            File.WriteAllBytes(HttpRuntime.AppDomainAppPath + @"\" + attachments.First().filename, file);
+            var file = System.Convert.FromBase64String(libraries.First().assembly);
+            File.WriteAllBytes(HttpRuntime.AppDomainAppPath + @"\" + libraries.First().filename, file);
         }
 
 
@@ -145,10 +161,11 @@ namespace CSScript.Controllers
             [Metadata(friendlyName:"C# Script", Visibility = VisibilityType.Default)]
             public string script { get; set; }
 
-            [Metadata(friendlyName: "Context Object(s)", description: "JSON Object(s) to be passed into script argument.  Must be an array [ ... ].  Can be referenced in scripted as 'args'")]
-            public IList<JToken> context {get; set;}
+            [Metadata(friendlyName: "Context Object(s)", description: "JSON Object(s) to be passed into script argument.  Can pass in multiple items, but base object must be single object { .. }.  Can be referenced in scripted as object names")]
+            public JObject context {get; set;}
 
-            public Collection<Attachment> attachments { get; set; }
+            [Metadata(friendlyName: "Libraries", description: "Libraries to be included in execution of script. Array of this format [{\"filename\": , \"assembly\": , \"usingstatement\": }, ..]", Visibility = VisibilityType.Advanced)]
+            public Collection<Library> libraries { get; set; }
 
             
         }
@@ -160,11 +177,12 @@ namespace CSScript.Controllers
       
         }
 
-        public class Attachment
+        
+        public class Library
         {
             public string filename;
-            public string content;
-            public string appendusing;
+            public string assembly;
+            public string usingstatement;
         }
 
     }
