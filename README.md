@@ -8,17 +8,31 @@ Click the "Deploy to Azure" button above.  You can create new resources or refer
  * Gateway (if you don't reference existing one)
  * API App (CSharpAPI)
  * API App Host (this is the site behind the api app that this github code deploys to)
- * Logic App Sample
+ * Logic App Sample - *This may not deploy before API builds causing some not found errors in designer*
 
 ## API Documentation ##
 The API app has one action - Execute Script - which returns a single "Result" parameter.
 
-The action has two input parameters:
+The action has three input parameters:
 
 | Input | Description |
 | ----- | ----- |
 | Script | C# script syntax |
-| Context Object | JSON to reference in the script via `args`.  Can pass in multiple objects, but base must be a single JObject { .. } |
+| Context Object *(optional)* | Objects to reference in the script.  Can pass in multiple objects, but base must be a single JObject { .. }. Can be accessed in script by object key (as a JToken). |
+| Libraries *(optional)* | Array of libraries to pass in and compile with script. Works from Blob/FTP Connector output of .dll files. See structure below. |
+
+#### Context Object Structure ####
+```javascript
+{ "object": { ... }, "object2": { ... } }
+```
+In script could then reference JToken object and JToken object
+
+#### Libraries Array Structure ####
+```javascript
+[{"filename": "name.dll", "assembly": {Base64StringFromConnector}, "usingstatment": "using Library.Reference;"}, { ... } ] 
+```
+
+####AppDomain ####
 
 The script executes inside of an AppDomain that includes some standard System assemblies as well as Newtonsoft.Json.
 
@@ -29,16 +43,25 @@ You can use the C# Script API as a trigger.  It takes a single input of "script"
 | Step   | Info |
 |----|----|
 | Action | Execute Script |
-| C# Script | `return args["Objects"][1];` |
-| Context Object | `{"Objects": [{"ID":1, "Name": "foo"}, {"ID":2, "Name": "bar"}]}` |
-| Output | `{"Result": {"ID": 2, "Name": "bar"}}` |
+| C# Script | `return users;` |
+| Context Object | `{"users": [{"ID":1, "Name": "foo"}, {"ID":2, "Name": "bar"}]}` |
+| Output | `{"Result": [{"ID":1, "Name": "foo"}, {"ID":2, "Name": "bar"}]}` |
 
 You can also perform more complex scripts like the following:
+####Context Object####
+```javascript
+{ "tax": 0.06, "orders": [{"order": "order1", "subtotal": 100}] }
+```
+#### C\# Script ####
 ```csharp
-double cost = args["Cost"];
-for(int x = 1; x < args.length; x++) 
-  {
-  args["array"][x]["foo"] = (int)args["array"][x]["bar"] * cost;
-  }
-return args;
+foreach (var order in orders)
+{
+    order["total"] = (double)order["subtotal"] * (1 + (double)tax);
+}
+return orders;
+```
+
+#### Result ####
+```javascript
+[ {"order": "order1", "subtotal": 100, "total": 106.0 } ] 
 ```
