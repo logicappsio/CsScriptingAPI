@@ -136,18 +136,7 @@
             "targetId": "[resourceId('Microsoft.Web/sites',parameters('gatewayName'))]"
           }
         },
-        {
-          "type": "tokens",
-          "apiVersion": "2015-03-01-preview",
-          "location": "[resourceGroup().location]",
-          "name": "[parameters('logicAppName')]",
-          "tags": {
-            "displayName": "AuthenticationToken"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.AppService/gateways', parameters('gatewayName'))]"
-          ]
-        }
+        
       ],
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', parameters('gatewayName'))]"
@@ -208,8 +197,8 @@
             "[resourceId('Microsoft.Web/Sites', parameters('siteName'))]"
           ],
           "properties": {
-            "RepoUrl": "http://github.com/logicappsio/CsScriptingAPI",
-            "branch": "master",
+            "RepoUrl": "[paramaters('repoURL')]",
+            "branch": "[paramaters('branch')]",
             "IsManualIntegration": true
           }
         }
@@ -270,7 +259,7 @@
       ],
       "properties": {
         "package": {
-          "id": "Microsoft.ApiApp"
+          "id": "LogicAppsIO.CSharp"
         },
         "host": {
 
