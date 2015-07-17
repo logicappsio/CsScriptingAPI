@@ -8,7 +8,6 @@ Click the "Deploy to Azure" button above.  You can create new resources or refer
  * Gateway (if you don't reference existing one)
  * API App (CSharpAPI)
  * API App Host (this is the site behind the api app that this github code deploys to)
- * Logic App Sample - *This may not deploy before API builds causing some not found errors in designer*
 
 ## API Documentation ##
 The API app has one action - Execute Script - which returns a single "Result" parameter.
@@ -23,9 +22,9 @@ The action has three input parameters:
 
 #### Context Object Structure ####
 ```javascript
-{ "object": { ... }, "object2": { ... } }
+{ "object1": { ... }, "object2": "value" }
 ```
-In script could then reference JToken object and JToken object
+In script could then reference object1 and object2 - both passed in as a JToken.
 
 #### Libraries Array Structure ####
 ```javascript
@@ -43,9 +42,9 @@ You can use the C# Script API as a trigger.  It takes a single input of "script"
 | Step   | Info |
 |----|----|
 | Action | Execute Script |
-| C# Script | `return users;` |
-| Context Object | `{"users": [{"ID":1, "Name": "foo"}, {"ID":2, "Name": "bar"}]}` |
-| Output | `{"Result": [{"ID":1, "Name": "foo"}, {"ID":2, "Name": "bar"}]}` |
+| C# Script | `return message;` |
+| Context Object | `{"message": {"Hello": "World"}}` |
+| Output | `{"Result": {"Hello": "World"}}` |
 
 You can also perform more complex scripts like the following:
 ####Context Object####
