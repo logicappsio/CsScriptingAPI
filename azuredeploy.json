@@ -132,7 +132,19 @@
             "targetId": "[resourceId('Microsoft.Web/sites',parameters('gatewayName'))]"
           }
         },
-        
+          {
+          "type": "tokens",
+          "apiVersion": "2015-03-01-preview",
+          "location": "[resourceGroup().location]",
+          "name": "[parameters('apiAppName')]",
+          "tags": {
+            "displayName": "AuthenticationToken"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.AppService/gateways', parameters('gatewayName'))]"
+          ]
+        }
+
       ],
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', parameters('gatewayName'))]"
