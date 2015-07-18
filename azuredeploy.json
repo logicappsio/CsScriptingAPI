@@ -18,10 +18,6 @@
     "branch": {
       "type": "string"
     },
-    "logicAppName": {
-      "type": "string",
-      "defaultValue": "CSharpSample"
-    },
     "svcPlanName": {
       "type": "string"
     },
@@ -213,7 +209,7 @@
           "appSettings": [
             {
               "name": "EMA_MicroserviceId",
-              "value": "[parameters('siteName')]"
+              "value": "[parameters('apiAppName')]"
             },
             {
               "name": "EMA_Secret",
