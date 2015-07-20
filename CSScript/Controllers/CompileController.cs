@@ -59,7 +59,7 @@ namespace CSScript.Controllers
 
        
         [HttpGet]
-        [Metadata(friendlyName: "Execute Script Trigger", description: "When the script returns true, the Logic App will fire")]
+        [Metadata(friendlyName: "Execute Script Trigger", description: "When the script returns anything but false, the Logic App will fire")]
         [Trigger(TriggerType.Poll)]
         public HttpResponseMessage ExecutePollTrigger([FromUri] string script)
         {
@@ -77,7 +77,7 @@ namespace CSScript.Controllers
         /// <summary>
         /// Generates variables within the script matching to the Key/Values of the context object
         /// </summary>
-        /// <param name="json"></param>
+        /// <param name="json">JSON Context passed through</param>
         private void GenerateArgs(JObject json)
         {
             args = new List<JToken>();
@@ -154,10 +154,17 @@ namespace CSScript.Controllers
             }
         }
 
+        /// <summary>
+        /// Loop through the attachements write the .dll from the Base64String
+        /// </summary>
+        /// <param name="libraries">Array of libraries</param>
         private void readAttachments(Collection<Library> libraries)
         {
-            var file = System.Convert.FromBase64String(libraries.First().assembly);
-            File.WriteAllBytes(HttpRuntime.AppDomainAppPath + @"\" + libraries.First().filename, file);
+            foreach (var library in libraries)
+            {
+                var file = System.Convert.FromBase64String(library.assembly);
+                File.WriteAllBytes(HttpRuntime.AppDomainAppPath + @"\" + library.filename, file);
+            }
         }
 
 
@@ -175,14 +182,6 @@ namespace CSScript.Controllers
             
         }
 
-
-        public class Output
-        {
-            public JToken Result { get; set; }
-      
-        }
-
-        
         public class Library
         {
             public string filename;
