@@ -26,7 +26,8 @@ namespace CSScript.Controllers
             using System.Linq; 
             using System.Collections.Generic;
             using System.Net;
-            using System.Net.Http;";
+            using System.Net.Http;
+            using System.Xml;";
 
         List<JToken> args;
         
