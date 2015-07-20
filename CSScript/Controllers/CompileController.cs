@@ -35,7 +35,7 @@ namespace CSScript.Controllers
 
         [HttpPost]
         [Metadata(friendlyName: "Execute Script")]
-        public Output Execute([FromBody] Body body)
+        public JToken Execute([FromBody] Body body)
         {          
             if (body.context != null)
                 GenerateArgs(body.context);
@@ -44,7 +44,7 @@ namespace CSScript.Controllers
                 readAttachments(body.libraries);
             var result = (JToken)RunScript(body.script, "JToken", body.libraries);
             if (compiled)
-                return new Output { Result = result };
+                return result;
             else
             {
                 var resp = new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest)
@@ -69,7 +69,7 @@ namespace CSScript.Controllers
             if (result.ToString() == "False")
                 return Request.EventWaitPoll();
             else if (compiled)
-                return Request.EventTriggered(new Output { Result = result});
+                return Request.EventTriggered(result);
             else
                 return Request.CreateErrorResponse(System.Net.HttpStatusCode.BadRequest, result.ToString()); 
         }

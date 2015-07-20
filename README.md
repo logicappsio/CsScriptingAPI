@@ -10,7 +10,7 @@ Click the "Deploy to Azure" button above.  You can create new resources or refer
  * API App Host (this is the site behind the api app that this github code deploys to)
 
 ## API Documentation ##
-The API app has one action - Execute Script - which returns a single "Result" parameter.
+The API app has one action - Execute Script - which returns a JToken based on what the script returns.
 
 The action has three input parameters:
 
@@ -44,7 +44,7 @@ You can use the C# Script API as a trigger.  It takes a single input of "script"
 | Action | Execute Script |
 | C# Script | `return message;` |
 | Context Object | `{"message": {"Hello": "World"}}` |
-| Output | `{"Result": {"Hello": "World"}}` |
+| Output | `{"Hello": "World"}` |
 
 You can also perform more complex scripts like the following:
 ####Context Object####
