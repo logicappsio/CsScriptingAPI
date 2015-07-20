@@ -269,8 +269,9 @@
         "package": {
           "id": "Microsoft.ApiApp"
         },
+        "accessLevel" : "PublicAnonymous",
         "host": {
-
+  
           "resourceName": "[parameters('siteName')]"
         },
         "gateway": {
