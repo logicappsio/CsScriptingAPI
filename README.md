@@ -33,7 +33,7 @@ In script could then reference object1 and object2 - both passed in as a JToken.
 
 ####AppDomain ####
 
-The script executes inside of an AppDomain that includes some standard System assemblies as well as Newtonsoft.Json.
+The script executes inside of an AppDomain that includes some standard System assemblies as well as Newtonsoft.Json.  The full list can be found [here](#compiler-information)
 
 ###Trigger###
 You can use the C# Script API as a trigger.  It takes a single input of "script" and will trigger the logic app (and pass result) whenever the script returns anything but `false`.  You set the frequency in which the script runs.
