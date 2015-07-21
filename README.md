@@ -18,7 +18,7 @@ The action has three input parameters:
 | ----- | ----- |
 | Script | C# script syntax |
 | Context Object *(optional)* | Objects to reference in the script.  Can pass in multiple objects, but base must be a single JObject { .. }. Can be accessed in script by object key (as a JToken). |
-| Libraries *(optional)* | Array of libraries to pass in and compile with script. Works from Blob/FTP Connector output of .dll files. See structure below. |
+| Libraries *(optional)* | Array of libraries to pass in and compile with script. Works from Blob/FTP Connector output of .dll files. See structure [below](#libraries-array-structure).  Default libraries can be found [here](#compiler-information) |
 
 #### Context Object Structure ####
 ```javascript
@@ -64,3 +64,19 @@ return orders;
 ```javascript
 [ {"order": "order1", "subtotal": 100, "total": 106.0 } ] 
 ```
+
+## Compiler Information ##
+
+The following assemblies are included by default in the script:
+
+```csharp
+using System; 
+using Newtonsoft.Json; 
+using Newtonsoft.Json.Linq; 
+using System.Linq; 
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Xml;
+```
+
